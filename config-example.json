@@ -1,0 +1,11 @@
+{
+    "listen": "0.0.0.0:25565",
+    "timeout": 3,
+    "servers": {
+        "default": {
+            "proxy": "mc.example.com:25565",
+            "description": "zzzzz",
+            "startup": "gcloud compute instances start minecraft"
+        }
+    }
+}

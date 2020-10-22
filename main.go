@@ -2,24 +2,42 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 
+	"github.com/lecafard/mcproxy/schemas"
 	"github.com/lecafard/mcproxy/states"
 )
 
 const MaxPacketLength = 2097152
 
+var config schemas.Config
+
 func main() {
+	var configFile string
 	arguments := os.Args
 	if len(arguments) == 1 {
-		fmt.Println("Please provide port number")
-		return
+		configFile = "config.json"
+	} else {
+		configFile = arguments[1]
 	}
 
-	port := ":" + arguments[1]
-	l, err := net.Listen("tcp", port)
+	configBytes, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		fmt.Println("unable to read config file:", configFile)
+		return
+	}
+	err = json.Unmarshal(configBytes, &config)
+	if err != nil {
+		fmt.Println("unable to unmarshal config file:", configFile)
+		return
+	}
+	fmt.Println("read config file:", configFile)
+
+	l, err := net.Listen("tcp", config.Listen)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -46,7 +64,7 @@ func handler(c net.Conn) {
 	state := states.State{Handler: states.StateHandshaking}
 	client := states.Client{}
 	for {
-		state = state.Handler(w, r, &client)
+		state = state.Handler(w, r, &config, &client)
 		if state.Handler == nil {
 			return
 		}
